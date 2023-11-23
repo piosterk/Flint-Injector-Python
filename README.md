@@ -10,4 +10,4 @@ Enter the placeid in flint game and click the teleport button
 After you get teleported open Flint Injector file
 If you dont have atleast 1 tool you wouln't be able to execute scripts.
 
-# Discord https://discord.gg/dEKRk6CcxE
+# For more updates, join our [Discord](https://discord.gg/dEKRk6CcxE)
