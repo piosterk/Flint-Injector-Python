@@ -233,3 +233,5 @@ class Injection:
         # Credits to big dick jay_howdy
 
         return injectscript
+
+# pls dont judge my bad code :(
