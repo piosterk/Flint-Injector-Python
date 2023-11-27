@@ -1,71 +1,55 @@
 import roblox
 import time
 
-def main():
-    print("Injecting", roblox.robloxver.upper())
+def Check(Instance):
+    print(Instance.Name, hex(Instance.address), "ClassName:", Instance.ClassName)
+    return Instance or False
 
-    Utility = roblox.Utility
+def main():
+    Utility = roblox.Util
 
     Injection = roblox.Injection()
     ToInstance = roblox.toInstance
-    Offsets = roblox.Offsets
 
-    ClientReplicator = ToInstance(Injection.ClientReplicator)
+    if Injection.ClientReplicator:
+        ClientReplicator = ToInstance(Injection.ClientReplicator)
 
-    if ClientReplicator.Name == "ClientReplicator":
-        print("Found", ClientReplicator.Name, hex(ClientReplicator.address))
+        if ClientReplicator.ClassName == "ClientReplicator": # Checks if its valid instance
+            Game = Check(ClientReplicator.GetLastAncestor())
 
-        Game = ClientReplicator.GetLastAncestor()
-        print("Found", Game.Name, hex(Game.address))
+            Players = Check(Game.FindFirstClass("Players"))
+            
+            LocalPlayer = Check(Players.LocalPlayer)
 
-        Workspace = Game.FindFirstClass("Workspace")
-        print("Found", Workspace.Name, hex(Workspace.address))
+            Backpack = Check(LocalPlayer.FindFirstClass("Backpack"))
 
-        Players = Game.FindFirstClass("Players")
-        print("Found", Players.Name, hex(Players.address))
+            CurrentTool, ToolScript = None, None
 
-        LocalPlayer = ToInstance(Utility.readQword(Players.address + Offsets[-1]))
-        print("Found", LocalPlayer.Name, hex(LocalPlayer.address))
+            for Children in Backpack.GetChildren():
+                if Children.ClassName == "Tool" and Children.FindFirstClass("LocalScript", True):
+                    CurrentTool = Check(Children)
+                    ToolScript = Check(Children.FindFirstClass("LocalScript", True))
+                    break
+            
+            print("\nGetting injection script...")
 
-        Backpack = LocalPlayer.FindFirstClass("Backpack")
-        print("Found", Backpack.Name, hex(Backpack.address))
+            InjectionAddress = Injection.FindInject()
 
-        Tool = Backpack.FindFirstClass("Tool")
-        print("Found", Tool.Name, hex(Tool.address))
+            if InjectionAddress:
+                InjectionScript = Check(ToInstance(InjectionAddress))
+                Length = 0x150
+                
+                newBytes = Utility.readBytes(InjectionScript.address + 0x100, Length)
+                Utility.writeBytes(ToolScript.address + 0x100, newBytes, Length)
 
-        if Tool:
-
-            ToolScript = Tool.FindFirstClass("LocalScript")
-
-            InjectionScript = ToInstance(InjectionAddress)
-            InjectionBytes = Utility.readBytes(InjectionScript.address + 0x100, 0x150)
-
-            if ToolScript:
-                print("Found", ToolScript.Name, hex(ToolScript.address))
-
-                print("Getting inject script...")
-                InjectionAddress = Injection.FindInject()
-
-                if InjectionAddress:
-                    print("Got inject script!")
-
-                    InjectionScript = ToInstance(InjectionAddress)
-                    InjectionBytes = Utility.readBytes(InjectionScript.address + 0x100, 0x150)
-                    
-                    Utility.writeBytes(ToolScript.address + 0x100, InjectionBytes, 0x150)
-
-                    print("Equip", Tool.Name)
-                else:
-                    print("Inject script not found")
+                print("Equip", CurrentTool.Name)
             else:
-                print("Localscript not found.")
-        else:
-            print("Tool not found.")
+                print("Failed to get injection script.")
     else:
-        print("Inject failed, please join a game.")
-
+        print("Failed to inject, join a game first.")
+    
     print("Closing in 5 seconds")
-
     time.sleep(5)
+    exit()
 
 main()
